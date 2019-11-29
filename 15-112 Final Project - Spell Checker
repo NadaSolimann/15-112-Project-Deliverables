@@ -1,18 +1,52 @@
 import tkinter as tk
+from tkinter import ttk
+from tkinter.scrolledtext import ScrolledText
+#from PIL import Image, ImageTk
+import tkinter.filedialog
 import re
 import pickle
-from tkinter.scrolledtext import ScrolledText
 import string
+
+'''class startPage():
+    def __init__(self, window, vocab, startWithSameLetter):
+        self.window = window
+        self.mainFrame = tk.Frame(window)
+        self.mainFrame.pack()
+        self.openButton = tk.Button(self.mainFrame, text="Open Local File", command = self.openTextEditor)
+        self.newButton = tk.Button(self.mainFrame, text="Create New File", command = self.openTextEditor)
+        self.openButton.grid(row=0, column=0)
+        self.newButton.grid(row=2, column=0)
+
+    def openTextEditor(self):
+        self.window.destroy()
+        window = tk.Tk()
+        textEditor(window, vocab, startWithSameLetter)'''
+
 
 # this class is responsible for making the GUI of the writing page
 # it's also responsible for binding the arrows with the dictionary list
-class textEditor:
+class textEditor():
     def __init__(self, window, vocab, startWithSameLetter):
         # create main gui elements and bind them to their appropriate functions
-        self.notepad = ScrolledText(window)
+        self.tabControl= ttk.Notebook(window)
+        self.tab1 = ttk.Frame(self.tabControl)
+        self.tabControl.add(self.tab1 , text='File 1')
+        self.tabControl.pack(expan=1, fill = "both")
+        self.labelFrame = ttk.LabelFrame(self.tab1, text = "habloo")
+        self.labelFrame.pack()
+        self.notepad = ScrolledText(self.labelFrame)
         self.var = tk.IntVar()
-        self.autoCorrectOption = tk.Checkbutton(window, text="Enable Auto-Correct", variable=self.var, command=self.switchSpellChecker)
-        self.word_suggestions = tk.Listbox(window)
+        self.autoCorrectOption = tk.Checkbutton(self.labelFrame, text="Enable Auto-Correct", variable=self.var, command=self.switchSpellChecker)
+        self.autoComplete_suggestions = tk.Listbox(self.labelFrame)
+        self.autoCorrect_suggestions = tk.Listbox(self.labelFrame)
+        self.openFileButton = tk.Button(window, text="Open",command=self.openFile)
+        self.saveFileButton = tk.Button(window, text="Save",command=self.saveToFile)
+        self.openFileButton.pack()
+        self.saveFileButton.pack()
+
+        ## self.addTabContents()
+        #self.createMenuBar()
+        #self.createToolBar()
 
         self.autoCorrectOption.pack()
         self.notepad.pack()
@@ -22,11 +56,11 @@ class textEditor:
         self.notepad.tag_configure("misspelling", foreground="red", underline=True)
 
         # bind all navigation to checking the spelling of the word
-        self.click_funcid = self.notepad.bind("<ButtonRelease-1>", self.spellChecker)
-        self.up_funcid = self.notepad.bind("<Up>", self.spellChecker)
-        self.down_funcid = self.notepad.bind("<Down>", self.spellChecker)
-        self.left_funcid = self.notepad.bind("<Left>", self.spellChecker)
-        self.right_funcid = self.notepad.bind("<Right>", self.spellChecker)
+        self.nav_click = self.notepad.bind("<ButtonRelease-1>", self.spellChecker)
+        self.nav_up = self.notepad.bind("<Up>", self.spellChecker)
+        self.nav_down = self.notepad.bind("<Down>", self.spellChecker)
+        self.nav_left = self.notepad.bind("<Left>", self.spellChecker)
+        self.nav_right = self.notepad.bind("<Right>", self.spellChecker)
 
         # check each word's spelling after typed and mark it up
         self.notepad.bind("<space>", self.isSpeltCorrect)
@@ -35,21 +69,94 @@ class textEditor:
         # keep calling autocomplete while user is writing
         for letter in "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM":
             self.notepad.bind("<KeyRelease-" + letter + ">", self.autoComplete)
-        self.notepad.bind("<KeyRelease-BackSpace>", self.autoComplete)
+        self.notepad.bind("<KeyRelease-BackSpace>", self.autoCompleteClickSelect)
 
-        self.word_suggestions.bind('<<ListboxSelect>>', self.clickSelect)
+        ## self.autoComplete_suggestions.bind('<<ListboxSelect>>', self.autoCompleteClickSelect)
+        ## self.autoCorrect_suggestions.bind('<<ListboxSelect>>', self.autoCorrectClickSelect)
+        '''autoComplete not called??--also indexes wrong'''
+
+    def createMenuBar(self):
+        self.menuBar = tk.Menu(window)
+        window.config(menu= self.menuBar)
+
+        self.fileMenu = tk.Menu(self.menuBar)
+        self.menuBar.add_cascade(label = "File", menu = self.fileMenu)
+        self.menuBar.add_command(label = "New Document", command=self.habloo)
+        self.menuBar.add_command(label = "Open Local File", command=self.habloo)
+        self.menuBar.add_command(label = "Save file", command=self.habloo)
+        self.menuBar.add_command(label = "Open Recent File", command=self.habloo)
+        self.menuBar.add_command(label = "Close File", command=self.habloo)
+        self.menuBar.add_command(label = "Exit", command=self.habloo)
+
+
+        self.editMenu = tk.Menu(self.menuBar)
+        self.menuBar.add_cascade(label = "Edit", menu = self.editMenu)
+        self.menuBar.add_command(label = "Undo", command=self.habloo)
+        self.menuBar.add_command(label = "Redo", command=self.habloo)
+        self.menuBar.add_command(label = "Copy", command=self.habloo)
+        self.menuBar.add_command(label = "Cut", command=self.habloo)
+        self.menuBar.add_command(label = "Paste", command=self.habloo)
+
+
+    '''https://icons-for-free.com/folder+open+icon-1320161390409087972/'''
+    def createToolBar(self):
+        toolbar = tk.Frame(window)
+        open_img = Image.open("openicon.png")
+        save_img = Image.open("saveicon.png")
+        undo_img = Image.open("undoicon.png")
+        redo_img = Image.open("redoicon.png")
+        recents_img = Image.open("recenticon.png")
+
+        open_icon = ImageTk.PhotoImage(open_img)
+        save_icon = ImageTk.PhotoImage(save_img)
+        undo_icon = ImageTk.PhotoImage(undo_img)
+        redo_icon = ImageTk.PhotoImage(redo_img)
+        recents_icon = ImageTk.PhotoImage(recents_img)
+
+        open_button = tk.Button(toolbar, image=open_icon)
+        save_button = tk.Button(toolbar, image=save_icon)
+        undo_button = tk.Button(toolbar, image=undo_icon)
+        redo_button = tk.Button(toolbar, image=redo_icon)
+        recents_button = tk.Button(toolbar, image=recents_icon)
+
+        open_button.image = open_icon
+        save_button.image = save_icon
+        undo_button.image = undo_icon
+        redo_button.image = redo_icon
+        recents_button.image = recents_icon
+
+        open_button.pack()
+        save_button.pack()
+        undo_button.pack()
+        redo_button.pack()
+        recents_button.pack()
+
+        toolbar.pack()
+
+    def habloo(self):
+        print('hoiii')
+
+    '''def addTabContents(self):
+        labelFrame = ttk.LabelFrame(self.tab1, text = "habloo")
+        labelFrame.pack()
+        self.notepad = ScrolledText(labelFrame)
+        self.var = tk.IntVar()
+        self.autoCorrectOption = tk.Checkbutton(labelFrame, text="Enable Auto-Correct", variable=self.var, command=self.switchSpellChecker)
+        self.autoComplete_suggestions = tk.Listbox(labelFrame)
+        self.autoCorrect_suggestions = tk.Listbox(labelFrame)'''
+
 
     # this function takes automatically the first choice from the suggestion
     # box and replaces it with the word that is underlined as misspelt
-    def autoCorrect(self):
+    def autoCorrect(self, event):
         lastWord = self.getLastWord()
-        if lastWord and self.spellCheckerList(lastWord):
+        if self.spellCheckerList(lastWord):
             # get first suggestiosn from listbox contents
             bestSuggestion = self.spellCheckerList(lastWord)[0]
             # configure and find first and last index of word to be replaced
             start = self.notepad.get('1.0', tk.END).index(lastWord)
             end = start + len(lastWord)
-            line_num = int(float(self.notepad.index(tk.END)))
+            line_num = int(float(self.notepad.index(tk.CURRENT)))
             start_i = str(line_num) + '.' + str(start)
             end_i = str(line_num) + '.' + str(end)
             # delete the misspelled word by the best suggestion in text widget
@@ -57,14 +164,28 @@ class textEditor:
             self.notepad.insert(start_i, bestSuggestion)
 
     # this function unbinds the arrows with the list from the dictionary
-    # sothat the list dosen't appear when pressing the auto-correct option
+    # so that the list dosen't appear when pressing the auto-correct option
     def switchSpellChecker(self):
-        self.notepad.unbind("<ButtonRelease-1>", self.click_funcid)
-        self.notepad.unbind("<Up>", self.up_funcid)
-        self.notepad.unbind("<Down>", self.down_funcid)
-        self.notepad.unbind("<Left>", self.left_funcid)
-        self.notepad.unbind("<Right>", self.right_funcid)
-        self.autoCorrect()
+        self.notepad.unbind('<ButtonRelease-1>')
+        self.notepad.unbind('<Up>')
+        self.notepad.unbind('<Down>')
+        self.notepad.unbind('<Left>')
+        self.notepad.unbind('<Right>')
+        self.notepad.unbind("<space>")
+        if self.var.get():
+            self.notepad.bind("<space>", self.autoCorrect)
+            self.notepad.bind(".", self.autoCorrect)
+        else:
+            self.notepad.bind("<ButtonRelease-1>", self.spellChecker)
+            self.notepad.bind("<Up>", self.spellChecker)
+            self.notepad.bind("<Down>", self.spellChecker)
+            self.notepad.bind("<Left>", self.spellChecker)
+            self.notepad.bind("<Right>", self.spellChecker)
+
+            # check each word's spelling after typed and mark it up
+            self.notepad.bind("<space>", self.isSpeltCorrect)
+            self.notepad.bind(".", self.isSpeltCorrect)
+
 
     # this function gets the last word that was typed by the user
     def getLastWord(self):
@@ -81,8 +202,9 @@ class textEditor:
     # getting the words from the screen and correct their form
     def spellCheckerList(self, word_to_check):
         edits = {}
-        if word_to_check == "":
+        if word_to_check == "" or word_to_check == " ":
             return
+
         elif not self.isSpeltCorrect(word_to_check):
             for word in self.vocab:
                 edits_num = self.minEditDistance(word_to_check, word)
@@ -117,14 +239,13 @@ class textEditor:
                     suggestions.append(word)
         return suggestions
 
-    '''STILL TO DO, CONSIDER PUNCTUATION AND CAPITALIZATION IN SPELLCHECKER'''
+    '''STILL TO DO, CONSIDER CAPITALIZATION IN SPELLCHECKER and replacement word/pop-up lists'''
 
     # here we check if the word is spelt correctly or not
     # if it does it returns True otherwise it returns False
-    def isSpeltCorrect(self, aword):
-        word = self.getLastWord()
-        #self.word_suggestions.config(state='disabled')
+    def isSpeltCorrect(self, word):
         self.markUp(word)
+        self.autoComplete_suggestions.destroy()
         if word in self.vocab:
             return True
         return False
@@ -133,7 +254,7 @@ class textEditor:
     # depending in their frequency, this will be then added to the
     # suggestion list. this function updates after typing each charachter
     def autoCompleteList(self, e):
-        typed_word = self.getCurrWord(e)
+        typed_word = self.getCurrWord(e).lower()
         if typed_word == "":
             return
         freqs = []
@@ -141,7 +262,7 @@ class textEditor:
         inp_length = len(typed_word)
         for word in self.vocab:
             # check for english words that start with the same characters
-            if word[:inp_length].lower() == typed_word.lower():
+            if word[:inp_length].lower() == typed_word:
                 # record the frequency ranks of such words
                 freq = self.vocab.get(word)
                 freqs.append(freq)
@@ -157,9 +278,11 @@ class textEditor:
     # this function takes the list of words suggested if any and
     # inserts them on the screen in a listbox
     def autoComplete(self, event):
-        #self.word_suggestions.config(state='normal')
-        self.word_suggestions.delete(0, tk.END)
-        word = self.getCurrWord(event)
+        #self.word_suggestions.destroy()
+        #self.word_suggestions = tk.Listbox(window)
+        self.autoComplete_suggestions.destroy()
+        self.autoComplete_suggestions = tk.Listbox(window)
+        word = self.getCurrWord(event).lower()
         if not word:
             return
         # if there is one character typed
@@ -169,7 +292,7 @@ class textEditor:
             i = 0
             while i < 11 and i < len(suggestions):
                 for l in suggestions:
-                    self.word_suggestions.insert(i, l)
+                    self.autoComplete_suggestions.insert(i, l)
                     i += 1
         else:
             # if typed portion is a part of a valid word
@@ -177,21 +300,34 @@ class textEditor:
                 # get autocomplete list and append its first 10 values into the listbox
                 suggestions = self.autoCompleteList(event)[:10]
                 for i in range(len(suggestions)):
-                    self.word_suggestions.insert(i, suggestions[i])
+                    self.autoComplete_suggestions.insert(i, suggestions[i])
             else:
-                self.word_suggestions.insert(0, "No matches found.")
+                self.autoComplete_suggestions.insert(0, "No matches found.")
+
+        if word in self.autoComplete_suggestions.get(0, tk.END):
+            index = self.autoComplete_suggestions.get(0, tk.END).index(word)
+            self.autoComplete_suggestions.delete(index)
+            if len(self.autoCompleteList(event)) >= 11:
+                self.autoComplete_suggestions.insert(10, self.autoCompleteList(event)[10])
 
         # place the listbox where the cursor is
         (x, y, w, h) = self.notepad.bbox('insert')
-        self.word_suggestions.place(x=x + 100, y=y + 120, anchor="center")
+        self.autoComplete_suggestions.place(x=x+125, y=y+180, anchor="center")
+        self.autoComplete_suggestions.bind('<<ListboxSelect>>', self.autoCompleteClickSelect)
+
 
     # this function also draws a list box with all the suggested words that
     # could replace the misspelt word.
     def spellChecker(self, event):
+        if self.getCurrWord(event) == self.getNavigWord(event):
+            self.autoComplete(event)
+            return
+        #self.autoComplete_suggestions.destroy()
+        self.autoCorrect_suggestions = tk.Listbox(self.labelFrame)
         word = self.getNavigWord(event)
         # if the suggestions listbox is not empty, clear it
-        if len(self.word_suggestions.get(0, tk.END)) != 0:
-            self.word_suggestions.delete(0, tk.END)
+        if len(self.autoCorrect_suggestions.get(0, tk.END)) != 0:
+            self.autoCorrect_suggestions.delete(0, tk.END)
         # exit if the word is spelt correctly
         if self.isSpeltCorrect(word):
             return
@@ -201,40 +337,59 @@ class textEditor:
                 # append first 10 suggestions into listbox
                 suggestions = self.spellCheckerList(word)[:10]
                 for i in range(len(suggestions)):
-                    self.word_suggestions.insert(i, suggestions[i])
+                    self.autoCorrect_suggestions.insert(i, suggestions[i])
+
             else:
                 # if not close matches from min edit function, display appropriate message
-                self.word_suggestions.insert(0, "No matches found.")
-                self.word_suggestions.insert(1, "Add word to dictionary")
+                self.autoCorrect_suggestions.insert(0, "No matches found.")
+                self.autoCorrect_suggestions.insert(1, "Add word to dictionary")
+                '''doesn't come up??'''
 
+        if len(word) != 1:
             # place the listbox where the cursor is
             (x, y, w, h) = self.notepad.bbox('insert')
-            self.word_suggestions.place(x=x + 100, y=y + 120, anchor="center")
+            self.autoCorrect_suggestions.place(x=x + 100, y=y + 120, anchor="center")
+
+        self.autoComplete_suggestions = tk.Listbox(self.labelFrame)
+        self.autoCorrect_suggestions.bind('<<ListboxSelect>>', self.autoCorrectClickSelect)
+
 
     # this function takes the selection that the user made from the suggestion box
     # and overwrites the word in he screen
-    def clickSelect(self, event):
-        selected_word = self.word_suggestions.get(self.word_suggestions.curselection())
+    def autoCorrectClickSelect(self, event):
+        selected_word = self.autoCorrect_suggestions.get(self.autoCorrect_suggestions.curselection())
         # get the entire word the cursor is on
         navigWord = self.getNavigWord(event)
-        start = self.notepad.get('1.0', tk.END).index(navigWord)
-        end = start + len(navigWord)
-        line_num = int(float(self.notepad.index(tk.CURRENT)))
-        # configure start and end indices of the word to be corrected syntax correctly
-        start_i = str(line_num) + '.' + str(start)
-        end_i = str(line_num) + '.' + str(end)
-        # delete the misspelled word and replace it by the correct one selected from the listbox
-        self.notepad.delete(start_i, end_i)
-        self.notepad.insert(start_i, selected_word)
+        if selected_word == "No matches found.":
+            self.autoCorrect_suggestions.destroy()
+            return
+        elif selected_word == "Add word to dictionary":
+            self.vocab[navigWord] = len(self.vocab) + 1
+        else:
+            start = self.notepad.get('1.0', tk.END).index(navigWord)
+            end = start + len(navigWord)
+            line_num = int(float(self.notepad.index(tk.CURRENT)))
+            # configure start and end indices of the word to be corrected syntax correctly
+            start_i = str(line_num) + '.' + str(start)
+            end_i = str(line_num) + '.' + str(end)
+            # delete the misspelled word and replace it by the correct one selected from the listbox
+            self.notepad.delete(start_i, end_i)
+            self.notepad.insert(start_i, selected_word)
+
+        if self.autoCorrect_suggestions.winfo_exists:
+            self.autoCorrect_suggestions.destroy()
 
     # this function takes the selection that the user made from the suggestion box
     # and overwrites the word in the screen for the autocomplete option
     def autoCompleteClickSelect(self, event):
-        selected_word = self.word_suggestions.get(self.word_suggestions.curselection())
+        selected_word = self.autoComplete_suggestions.get(self.autoComplete_suggestions.curselection())
+        if selected_word == "No matches found.":
+            self.autoComplete_suggestions.destroy()
+            return
         # get the partial word currently being typed
-        currWord = self.getCurrWord(event)
+        currWord = self.getCurrWord(event).lower()
         # configure start and end indices of the word to be corrected syntax correctly
-        start = self.notepad.get('1.0', tk.END).index(currWord) - len(selected_word)
+        start = self.notepad.get('1.0', tk.END).index(currWord)
         end = start + len(currWord)
         line_num = int(float(self.notepad.index(tk.CURRENT)))
         start_i = str(line_num) + '.' + str(start)
@@ -242,11 +397,12 @@ class textEditor:
         # delete the misspelled word and replace it by the correct one selected from the listbox
         self.notepad.delete(start_i, end_i)
         self.notepad.insert(start_i, selected_word)
+        self.autoComplete_suggestions.destroy()
 
     # this function underlines the word that is misspelt and
     # colors it with red
     def markUp(self, misspelt_word):
-        # search for starting index of
+        # search for starting index of the misspelt word
         index = self.notepad.search(r'\s', "insert", backwards=True, regexp=True)
         if index == "":
             index = "1.0"
@@ -311,7 +467,7 @@ class textEditor:
         nav_word = self.notepad.get(start, end)
         return nav_word.translate(str.maketrans('', '', string.punctuation))
 
-    # this function gets the word that is being modefied currently from the user
+    # this function gets the word that is being modified currently from the user
     # and returns it.
     def getCurrWord(self, event):
         all_typed = self.notepad.get("1.0", "end")
@@ -320,6 +476,34 @@ class textEditor:
         # remove unnecessary punctuations next to the typed word
         return curr_word.translate(str.maketrans('', '', string.punctuation))
 
+    def openFile(self):
+        file_name = tk.filedialog.askopenfilename()
+        with open(file_name, "r") as local_file:
+            self.notepad.insert(tk.END, local_file.read())
+
+    def saveToFile(self):
+        file_name = tkinter.filedialog.asksaveasfilename()
+        outfile = open("%s" % file_name, "w")
+        notepad_content = self.notepad.get("1.0", tk.END)
+        outfile.write(notepad_content)
+
+
+class files(textEditor):
+    def loadFile(self):
+        file_name = tk.filedialog.askopenfilename()
+        with open(file_name, "r") as local_file:
+            self.notepad.insert(tk.END, local_file.read())
+
+    '''def note_text(self, name):
+        self.file = open("%sNotes.txt"%name, "r")
+        self.text.delete("1.0",END)
+        self.text.insert(END, self.file.read())'''
+
+    def saveToFile(self):
+        file_name = tkinter.filedialog.asksaveasfilename()
+        outfile = open("%s" % file_name, "w")
+        notepad_content = self.notepad.get("1.0", tk.END)
+        outfile.write(notepad_content)
 
 window = tk.Tk()
 
@@ -331,17 +515,17 @@ with open("engDic.pkl", "rb") as pickle_dic:
 with open("letterStartDic.pkl", "rb") as pickle_dic:
     startWithSameLetter = pickle.load(pickle_dic)
 
+#App = startPage(window, vocab, startWithSameLetter)
 textEditor = textEditor(window, vocab, startWithSameLetter)
 window.mainloop()
 
 '''Irrelevent comments for myself'''
 '''add functionality: if press up and down while typing word can access listbox contents'''
 '''if with punctuation, autocorrected, add punctuation'''
-'''if up and down arrows while typing word, navigate through listbox words'''
-'''condition for not matches found in defined edit#'''
-'''listbox selection works for autocorrect, not autocomplete'''
+'''handling caps'''
+'''to fix: word can be typed over 2 lines'''
 '''if needed: for efficiency purposes, if navigating through same word, 
 no need to call and suggest new suggestions, just move listbox to appropriate position'''
-'''add word from listbox if same word, remove from suggestions if same word '''
 '''need to destroy listbox after each pressed once, after word is typed already'''
-'''add word to dictionary and no matches found listbox options'''
+'''EFFICIENCY'''
+'''need to have 600 lines of code min'''
