@@ -384,9 +384,9 @@ class textEditor():
         self.autoCorrect_suggestions.configure(font=myFont)
         # if the selected word is the one being currently typed
         # autocomplete it and don't spellcheck it (word not fully typed yet)
-        if self.getCurrWord(event) and self.getNavigWord(event):
+        '''if self.getCurrWord(event) and self.getNavigWord(event):
             self.autoComplete(event)
-            return
+            return'''
         word = self.getNavigWord(event)
         # if the suggestions listbox is not empty, clear it
         if len(self.autoCorrect_suggestions.get(0, tk.END)) != 0:
@@ -409,7 +409,7 @@ class textEditor():
         if len(word) != 1:
             # place the listbox where the cursor is
             (x, y, w, h) = self.notepad.bbox('insert')
-            self.autoCorrect_suggestions.place(x=x + 100, y=y + 120, anchor="center")
+            self.autoCorrect_suggestions.place(x=x + 115, y=y + 160, anchor="center")
 
         self.autoComplete_suggestions = tk.Listbox(self.labelFrame)
         myFont = Font(family="Calibri", size=15)
