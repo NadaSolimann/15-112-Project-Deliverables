@@ -309,7 +309,7 @@ class textEditor():
             return
         freqs = []
         suggestions = []
-        inp_length = len(typed_word.split("/n"))
+        inp_length = len(typed_word)
         for word in self.vocab:
             # check for english words that start with the same characters
             if word[:inp_length].lower() == typed_word:
@@ -818,5 +818,3 @@ window.rowconfigure(0, weight=1)
 window.geometry("950x950")
 
 window.mainloop()
-
-'''if autocorrect then autocorrect error with index'''
